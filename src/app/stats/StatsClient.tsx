@@ -30,6 +30,7 @@ function StatCard({
 export default function StatsClient() {
   const [stats, setStats] = useState<StatsDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -48,9 +49,32 @@ export default function StatsClient() {
     );
   }
 
+  async function handleReset() {
+    if (!confirm("Видалити всю статистику та продажи? Це неможна буде відмінити!")) return;
+    setResetting(true);
+    try {
+      const res = await fetch("/api/stats/reset", { method: "POST" });
+      if (res.ok) {
+        setStats(null);
+        window.location.reload();
+      }
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <div className="min-h-screen space-y-4 p-4 pb-8">
-      <h1 className="font-display text-xl font-bold text-slate-900">Статистика</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-xl font-bold text-slate-900">Статистика</h1>
+        <button
+          onClick={handleReset}
+          disabled={resetting}
+          className="btn-press rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+        >
+          {resetting ? "Видаляємо..." : "🗑️ Очистити"}
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Сьогодні" value={`${stats.todayTotal.toFixed(2)} ₴`} />
