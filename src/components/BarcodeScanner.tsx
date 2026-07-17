@@ -1,68 +1,43 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 
 type Props = {
   onDetected: (code: string) => void;
   onClose: () => void;
 };
 
-// Розширення window.BarcodeDetector, якого немає у стандартних типах TS
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options?: { formats?: string[] }) => {
-      detect: (source: CanvasImageSource) => Promise<{ rawValue: string }[]>;
-    };
-  }
-}
-
 export default function BarcodeScanner({ onDetected, onClose }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [supported, setSupported] = useState(true);
   const [manualCode, setManualCode] = useState("");
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    let intervalId: ReturnType<typeof setInterval> | undefined;
 
     async function start() {
-      if (typeof window === "undefined" || !window.BarcodeDetector) {
-        setSupported(false);
-        return;
-      }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
+        const scanner = new Html5Qrcode("qr-reader");
+        qrScannerRef.current = scanner;
 
-        const detector = new window.BarcodeDetector({
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
-        });
-
-        intervalId = setInterval(async () => {
-          if (!videoRef.current || videoRef.current.readyState < 2) return;
-          try {
-            const codes = await detector.detect(videoRef.current);
-            if (codes.length > 0 && !cancelled) {
-              onDetected(codes[0].rawValue);
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            if (!cancelled) {
+              onDetected(decodedText);
             }
-          } catch {
-            // ігноруємо помилки поодиноких кадрів
-          }
-        }, 350);
+          },
+          () => {}
+        );
+        
+        if (!cancelled) setScanning(true);
       } catch (e) {
-        setError("Немає доступу до камери. Дозвольте доступ у налаштуваннях браузера.");
+        if (!cancelled) {
+          setError("Немає доступу до камери. Дозвольте доступ у налаштуваннях браузера.");
+        }
       }
     }
 
@@ -70,8 +45,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
 
     return () => {
       cancelled = true;
-      if (intervalId) clearInterval(intervalId);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      qrScannerRef.current?.stop().catch(() => {});
     };
   }, [onDetected]);
 
@@ -97,32 +71,20 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         </button>
       </div>
 
-      {supported ? (
-        <div className="relative flex-1 overflow-hidden">
-          <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="h-32 w-64 rounded-2xl border-2 border-brand-300/80" />
-          </div>
-          {error && (
-            <p className="absolute inset-x-4 bottom-6 rounded-xl bg-red-600/90 px-4 py-3 text-center text-sm text-white">
-              {error}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center text-white">
-          <p className="text-sm text-slate-300">
-            Ваш браузер не підтримує автоматичне сканування штрих-кодів (BarcodeDetector). Введіть
-            код вручну — наприклад, використовуючи зовнішній сканер, який працює як клавіатура.
+      <div className="relative flex-1 overflow-hidden">
+        <div id="qr-reader" style={{ width: "100%", height: "100%" }} />
+        {error && (
+          <p className="absolute inset-x-4 bottom-6 rounded-xl bg-red-600/90 px-4 py-3 text-center text-sm text-white">
+            {error}
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       <form onSubmit={handleManualSubmit} className="flex gap-2 p-4">
         <input
           value={manualCode}
           onChange={(e) => setManualCode(e.target.value)}
-          autoFocus={!supported}
+          autoFocus
           placeholder="Введіть штрих-код вручну"
           className="flex-1 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/40 outline-none focus:border-brand-300"
         />
