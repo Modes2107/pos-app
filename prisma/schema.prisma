@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentType {
+  CASH
+  CARD
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id         String      @id @default(cuid())
+  name       String
+  sku        String      @unique // артикул
+  barcode    String?     @unique
+  price      Decimal     @db.Decimal(10, 2)
+  stock      Int         @default(0)
+  minStock   Int         @default(0)
+  imageUrl   String?
+  categoryId String?
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  saleItems  SaleItem[]
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([name])
+  @@index([sku])
+  @@index([barcode])
+}
+
+model Sale {
+  id          String      @id @default(cuid())
+  number      Int         @default(autoincrement())
+  items       SaleItem[]
+  total       Decimal     @db.Decimal(10, 2)
+  paymentType PaymentType
+  cashGiven   Decimal?    @db.Decimal(10, 2) // скільки готівки дав покупець
+  changeGiven Decimal?    @db.Decimal(10, 2) // решта
+  createdAt   DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([paymentType])
+}
+
+model SaleItem {
+  id        String   @id @default(cuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  name      String   // знімок назви товару на момент продажу
+  price     Decimal  @db.Decimal(10, 2) // ціна на момент продажу
+  quantity  Int
+  subtotal  Decimal  @db.Decimal(10, 2)
+
+  @@index([saleId])
+  @@index([productId])
+}
