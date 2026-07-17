@@ -39,17 +39,7 @@ export default function StatsClient() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !stats) {
-    return (
-      <div className="space-y-3 p-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-        ))}
-      </div>
-    );
-  }
-
-  async function handleReset() {
+  async function handleReset() {  // ← ПЕРЕНЕСИ СЮДИ, ДО if()
     if (!confirm("Видалити всю статистику та продажи? Це неможна буде відмінити!")) return;
     setResetting(true);
     try {
@@ -61,6 +51,16 @@ export default function StatsClient() {
     } finally {
       setResetting(false);
     }
+  }
+
+  if (loading || !stats) {
+    return (
+      <div className="space-y-3 p-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+        ))}
+      </div>
+    );
   }
 
   return (
