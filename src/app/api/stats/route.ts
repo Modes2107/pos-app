@@ -7,8 +7,12 @@ function startOfDay(d: Date) {
   return x;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const tzOffset = Number(searchParams.get("tzOffset") || 0);
+  
   const now = new Date();
+  now.setMinutes(now.getMinutes() - tzOffset);
   const todayStart = startOfDay(now);
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - 6);

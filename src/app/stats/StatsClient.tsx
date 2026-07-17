@@ -33,7 +33,8 @@ export default function StatsClient() {
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/stats")
+    const offset = new Date().getTimezoneOffset();
+    fetch(`/api/stats?tzOffset=${offset}`)
       .then((r) => r.json())
       .then(setStats)
       .finally(() => setLoading(false));
