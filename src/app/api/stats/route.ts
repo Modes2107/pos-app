@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setUTCHours(0, 0, 0, 0);  // Змінено з setHours на setUTCHours
-  return x;
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const tzOffset = Number(searchParams.get("tzOffset") || 0);
-  
+  const tzOffsetMs = tzOffset * 60 * 1000;
+
   const now = new Date();
-  now.setMinutes(now.getMinutes() - tzOffset);
-  const todayStart = startOfDay(now);
+  
+  // Вычислить полночь в локальной временной зоне пользователя
+  const virtualLocal = new Date(now.getTime() - tzOffsetMs);
+  const todayStart = new Date(
+    Date.UTC(
+      virtualLocal.getUTCFullYear(),
+      virtualLocal.getUTCMonth(),
+      virtualLocal.getUTCDate(),
+      0, 0, 0, 0
+    ) + tzOffsetMs
+  );
+
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - 6);
   const monthStart = new Date(todayStart);
@@ -32,6 +36,7 @@ export async function GET(request: NextRequest) {
   const todayTotal = todaySales.reduce((sum, s) => sum + Number(s.total), 0);
   const weekTotal = weekSales.reduce((sum, s) => sum + Number(s.total), 0);
   const monthTotal = monthSales.reduce((sum, s) => sum + Number(s.total), 0);
+
   const cashTotal = monthSales
     .filter((s) => s.paymentType === "CASH")
     .reduce((sum, s) => sum + Number(s.total), 0);
@@ -48,6 +53,7 @@ export async function GET(request: NextRequest) {
       productMap.set(item.name, existing);
     }
   }
+
   const topProducts = Array.from(productMap.values())
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 8);
@@ -56,12 +62,16 @@ export async function GET(request: NextRequest) {
   for (let i = 0; i < 30; i++) {
     const d = new Date(monthStart);
     d.setDate(d.getDate() + i);
-    dailyMap.set(d.toISOString().slice(0, 10), 0);
+    const dateKey = new Date(d.getTime() - tzOffsetMs).toISOString().slice(0, 10);
+    dailyMap.set(dateKey, 0);
   }
+
   for (const sale of monthSales) {
-    const key = new Date(sale.createdAt).toISOString().slice(0, 10);
+    const saleLocalDate = new Date(sale.createdAt.getTime() - tzOffsetMs);
+    const key = saleLocalDate.toISOString().slice(0, 10);
     dailyMap.set(key, (dailyMap.get(key) || 0) + Number(sale.total));
   }
+
   const dailyTotals = Array.from(dailyMap.entries()).map(([date, total]) => ({ date, total }));
 
   const allProducts = await prisma.product.findMany({ where: { isActive: true } });
