@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 function startOfDay(d: Date) {
   const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
+  x.setUTCHours(0, 0, 0, 0);  // Змінено з setHours на setUTCHours
   return x;
 }
 
