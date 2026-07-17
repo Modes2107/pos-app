@@ -2,19 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 
-function serializeProduct(p: {
-  id: string;
-  name: string;
-  sku: string;
-  barcode: string | null;
-  price: number | string;
-  stock: number;
-  minStock: number;
-  imageUrl: string | null;
-  categoryId: string | null;
-  category?: { name: string } | null;
-  isActive: boolean;
-}) {
+function serializeProduct(p: any) {
   return {
     id: p.id,
     name: p.name,
