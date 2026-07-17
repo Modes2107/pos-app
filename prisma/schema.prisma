@@ -28,7 +28,7 @@ model Category {
 model Product {
   id         String      @id @default(cuid())
   name       String
-  sku        String      @unique // артикул
+  sku        String      @unique
   barcode    String?     @unique
   price      Decimal     @db.Decimal(10, 2)
   stock      Int         @default(0)
@@ -40,7 +40,7 @@ model Product {
   isActive   Boolean     @default(true)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-
+  
   @@index([name])
   @@index([sku])
   @@index([barcode])
@@ -52,10 +52,10 @@ model Sale {
   items       SaleItem[]
   total       Decimal     @db.Decimal(10, 2)
   paymentType PaymentType
-  cashGiven   Decimal?    @db.Decimal(10, 2) // скільки готівки дав покупець
-  changeGiven Decimal?    @db.Decimal(10, 2) // решта
+  cashGiven   Decimal?    @db.Decimal(10, 2)
+  changeGiven Decimal?    @db.Decimal(10, 2)
   createdAt   DateTime    @default(now())
-
+  
   @@index([createdAt])
   @@index([paymentType])
 }
@@ -66,11 +66,11 @@ model SaleItem {
   sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId String
   product   Product  @relation(fields: [productId], references: [id])
-  name      String   // знімок назви товару на момент продажу
-  price     Decimal  @db.Decimal(10, 2) // ціна на момент продажу
+  name      String
+  price     Decimal  @db.Decimal(10, 2)
   quantity  Int
   subtotal  Decimal  @db.Decimal(10, 2)
-
+  
   @@index([saleId])
   @@index([productId])
 }
