@@ -62,6 +62,20 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/categories",
+    label: "Категорії",
+    icon: (active: boolean) => (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+        <path
+          d="M4 6h16M4 12h16M4 18h16"
+          stroke={active ? "#0f766e" : "#6b7280"}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
     href: "/stats",
     label: "Статистика",
     icon: (active: boolean) => (
@@ -123,7 +137,7 @@ export default function Nav({ username }: { username: string }) {
       </aside>
 
       {/* Мобільний: нижня панель */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex overflow-x-auto border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           return (
