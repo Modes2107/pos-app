@@ -17,6 +17,7 @@ model Admin {
   username     String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  sales        Sale[]
 }
 
 model Category {
@@ -43,11 +44,12 @@ model Product {
   
   @@index([name])
   @@index([sku])
-  @@index([barcode])
 }
 
 model Sale {
   id          String      @id @default(cuid())
+  adminId     String
+  admin       Admin       @relation(fields: [adminId], references: [id], onDelete: Cascade)
   number      Int         @default(autoincrement())
   items       SaleItem[]
   total       Decimal     @db.Decimal(10, 2)
@@ -56,8 +58,9 @@ model Sale {
   changeGiven Decimal?    @db.Decimal(10, 2)
   createdAt   DateTime    @default(now())
   
+  @@unique([adminId, number])
+  @@index([adminId])
   @@index([createdAt])
-  @@index([paymentType])
 }
 
 model SaleItem {
@@ -72,5 +75,4 @@ model SaleItem {
   subtotal  Decimal  @db.Decimal(10, 2)
   
   @@index([saleId])
-  @@index([productId])
 }
