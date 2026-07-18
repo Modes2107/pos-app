@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
 
       return tx.sale.create({
         data: {
+	  adminId: "admin",
           total,
           paymentType,
           cashGiven: paymentType === "CASH" ? cashGiven : null,
