@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const tzOffset = Number(searchParams.get("tzOffset") || 0);
   const tzOffsetMs = tzOffset * 60 * 1000;
-
   const now = new Date();
   
-  // Вычислить полночь в локальной временной зоне пользователя
   const virtualLocal = new Date(now.getTime() - tzOffsetMs);
   const todayStart = new Date(
     Date.UTC(
@@ -18,17 +22,16 @@ export async function GET(request: NextRequest) {
       0, 0, 0, 0
     ) + tzOffsetMs
   );
-
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - 6);
   const monthStart = new Date(todayStart);
   monthStart.setDate(monthStart.getDate() - 29);
 
   const [todaySales, weekSales, monthSales] = await Promise.all([
-    prisma.sale.findMany({ where: { createdAt: { gte: todayStart } } }),
-    prisma.sale.findMany({ where: { createdAt: { gte: weekStart } } }),
+    prisma.sale.findMany({ where: { adminId: session.sub, createdAt: { gte: todayStart } } }),
+    prisma.sale.findMany({ where: { adminId: session.sub, createdAt: { gte: weekStart } } }),
     prisma.sale.findMany({
-      where: { createdAt: { gte: monthStart } },
+      where: { adminId: session.sub, createdAt: { gte: monthStart } },
       include: { items: true },
     }),
   ]);
