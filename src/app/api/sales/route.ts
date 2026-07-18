@@ -11,6 +11,7 @@ type CartInput = {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
+    console.log("Session:", session);
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  console.log("Session:", session);
+  const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
