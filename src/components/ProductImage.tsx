@@ -1,36 +1,27 @@
-"use client";
+import Image from "next/image";
 
-import { useState } from "react";
-
-export default function ProductImage({
-  src,
-  alt,
-  className = "",
-}: {
+type Props = {
   src: string | null;
   alt: string;
   className?: string;
-}) {
-  const [failed, setFailed] = useState(false);
+};
 
-  if (!src || failed) {
+export default function ProductImage({ src, alt, className = "" }: Props) {
+  if (!src) {
     return (
-      <div
-        className={`flex items-center justify-center bg-brand-50 text-brand-300 ${className}`}
-      >
-        <svg viewBox="0 0 24 24" fill="none" className="h-1/2 w-1/2">
-          <path
-            d="M4 7h3l2-2h6l2 2h3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7Z"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinejoin="round"
-          />
-          <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="1.6" />
-        </svg>
-      </div>
+      <svg viewBox="0 0 24 24" className={className}>
+        <rect width="24" height="24" fill="#f3f4f6" />
+        <path
+          d="M8 10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm8 6l-3-4-3 3.72V19h10v-7zm4-11H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
+          fill="#d1d5db"
+        />
+      </svg>
     );
   }
 
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className={className} onError={() => setFailed(true)} />;
+  if (src.startsWith("data:")) {
+    return <img src={src} alt={alt} className={className} />;
+  }
+
+  return <Image src={src} alt={alt} className={className} fill />;
 }
