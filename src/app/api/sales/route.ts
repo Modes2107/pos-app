@@ -10,7 +10,7 @@ type CartInput = {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession(request.headers.get("cookie") || "");
+    const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       return tx.sale.create({
         data: {
-          adminId: session.id,
+          adminId: session.sub,
           total,
           paymentType,
           cashGiven: paymentType === "CASH" ? cashGiven : null,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getSession(request.headers.get("cookie") || "");
+  const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Number(searchParams.get("page") || 1));
   const pageSize = Math.min(200, Math.max(1, Number(searchParams.get("pageSize") || 30)));
 
-  const where: Prisma.SaleWhereInput = { adminId: session.id };
+  const where: Prisma.SaleWhereInput = { adminId: session.sub };
   if (from || to) {
     where.createdAt = {};
     if (from) where.createdAt.gte = new Date(from);
