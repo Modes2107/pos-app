@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 
 type Props = {
@@ -7,6 +10,8 @@ type Props = {
 };
 
 export default function ProductImage({ src, alt, className = "" }: Props) {
+  const [loaded, setLoaded] = useState(false);
+
   if (!src) {
     return (
       <svg viewBox="0 0 24 24" className={className}>
@@ -20,8 +25,24 @@ export default function ProductImage({ src, alt, className = "" }: Props) {
   }
 
   if (src.startsWith("data:")) {
-    return <img src={src} alt={alt} className={className} />;
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+      />
+    );
   }
 
-  return <Image src={src} alt={alt} className={className} fill />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`${className} ${!loaded ? "bg-slate-200" : ""}`}
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+    />
+  );
 }
