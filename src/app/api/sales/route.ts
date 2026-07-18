@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { getCurrentAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 
 type CartInput = {
   productId: string;
@@ -10,8 +10,8 @@ type CartInput = {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getCurrentAdmin(request.headers.get("cookie") || "");
-    if (!admin) {
+    const session = await getSession(request.headers.get("cookie") || "");
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       return tx.sale.create({
         data: {
-          adminId: admin.id,
+          adminId: session.id,
           total,
           paymentType,
           cashGiven: paymentType === "CASH" ? cashGiven : null,
@@ -122,8 +122,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const admin = await getCurrentAdmin(request.headers.get("cookie") || "");
-  if (!admin) {
+  const session = await getSession(request.headers.get("cookie") || "");
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Number(searchParams.get("page") || 1));
   const pageSize = Math.min(200, Math.max(1, Number(searchParams.get("pageSize") || 30)));
 
-  const where: Prisma.SaleWhereInput = { adminId: admin.id };
+  const where: Prisma.SaleWhereInput = { adminId: session.id };
   if (from || to) {
     where.createdAt = {};
     if (from) where.createdAt.gte = new Date(from);
